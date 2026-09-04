@@ -37,7 +37,12 @@ PULL_MAX = 0.15
 # once against the action graph's hard-coded (0.20, -0.10, 0.15) on a drawer
 # that works, then reused for every asset -- see the RULE comment in main().
 PLACE_X_FRAC  = 0.668   # along the opened tray's length
-PLACE_Y_FRAC  = -1.031  # of the half-width (just outside the near wall)
+PLACE_Y_FRAC  = -0.50   # of the half-width, toward the tray centre.
+# The official graph's -0.10 m sits ON the tray wall, which alone equals the
+# 0.1 m success radius -- it only works because the duck rolls inward on the
+# trays it was tuned for. Depending on that roll is an assumption a differently
+# shaped tray breaks, so aim at mid-width instead. Verified neutral: the drawer
+# it was calibrated against still collects 6/6.
 PLACE_Z_CLEAR = 0.066   # above the tray rim
 HOOK_DEPTH    = 0.012  # how far below the top rim the grasp point sits (m)
 
@@ -84,26 +89,106 @@ def detect_handle(mesh_baked, front_x, width_frac=0.85, eps=0.0008):
             panel_x = float(x)
             break
     if panel_x is None:
-        return None, None, None, "no full-width front panel found"
+        return None, None, None, "no full-width front panel found", None
 
     bar = V[V[:, 0] > panel_x + eps]
-    if len(bar) < 8:
-        return None, None, None, "front panel is flat (no protruding handle)"
-    blo, bhi = bar.min(axis=0), bar.max(axis=0)
-    gap = float(blo[0] - panel_x)          # hook depth between panel and bar
-    clearance = min(0.002, max(gap, 0.0) / 2.0)
-    grasp = np.array([blo[0] - clearance,
-                      (blo[1] + bhi[1]) / 2.0,
-                      (blo[2] + bhi[2]) / 2.0])
-    why = ("panel x=%.4f, bar x[%.4f,%.4f] protrudes %.1f mm, gap %.1f mm, "
-           "bar %.0fx%.0f mm -> grasp %.1f mm behind tip"
-           % (panel_x, blo[0], bhi[0], 1000 * (bhi[0] - panel_x), 1000 * gap,
-              1000 * (bhi[1] - blo[1]), 1000 * (bhi[2] - blo[2]),
-              1000 * (front_x - grasp[0])))
-    return grasp, (blo, bhi), panel_x, why
+    # A real bar spans a useful part of the tray and stands proud enough for the
+    # fingers to close around. Anything smaller is a moulding or a panel edge --
+    # drawer_walnut's raised centre section is 4 x 4 mm and 1.5 mm proud, and
+    # taking it for a handle put the grasp point on a flat door.
+    if len(bar) >= 8:
+        _lo, _hi = bar.min(axis=0), bar.max(axis=0)
+        plausible = ((_hi[1] - _lo[1]) > 0.15 * full_y
+                     and (_hi[0] - panel_x) > 0.004
+                     and (_hi[2] - _lo[2]) > 0.004)
+    else:
+        plausible = False
+    if plausible:
+        blo, bhi = bar.min(axis=0), bar.max(axis=0)
+        gap = float(blo[0] - panel_x)          # hook depth between panel and bar
+        clearance = min(0.002, max(gap, 0.0) / 2.0)
+        grasp = np.array([blo[0] - clearance,
+                          (blo[1] + bhi[1]) / 2.0,
+                          (blo[2] + bhi[2]) / 2.0])
+        why = ("protruding bar: panel x=%.4f, bar x[%.4f,%.4f] out %.1f mm, gap %.1f mm, "
+               "%.0fx%.0f mm -> grasp %.1f mm behind tip"
+               % (panel_x, blo[0], bhi[0], 1000 * (bhi[0] - panel_x), 1000 * gap,
+                  1000 * (bhi[1] - blo[1]), 1000 * (bhi[2] - blo[2]),
+                  1000 * (front_x - grasp[0])))
+        return grasp, (blo, bhi), panel_x, "bar|" + why, None
+
+    # No material in front of the panel. The handle may still be there, RECESSED
+    # into a pocket -- drawer_walnut's brass pull sits inside a shallow inset, so
+    # the protruding-bar search finds only a few-millimetre sliver of the panel
+    # edge. Look INSIDE the panel instead: between its rear and front planes,
+    # the frontmost slice whose y-span is a modest fraction of the tray width is
+    # the pull, and the fingers reach it through the pocket.
+    rear = None
+    for x in np.arange(panel_x - 0.002, panel_x - 0.06, -0.0005):
+        sl = V[(V[:, 0] >= x - eps) & (V[:, 0] <= x + eps)]
+        if len(sl) > 3 and np.ptp(sl[:, 1]) > width_frac * full_y:
+            rear = float(x)
+            break
+    if rear is None:
+        return None, None, None, "flat front panel, no handle of either kind", None
+    inner = V[(V[:, 0] > rear + eps) & (V[:, 0] < panel_x - eps)]
+    inner = inner[np.abs(inner[:, 1]) < 0.45 * full_y] if len(inner) else inner
+    if len(inner) < 8:
+        return None, None, None, "no pull found inside the front panel", None
+    blo, bhi = inner.min(axis=0), inner.max(axis=0)
+    # Inside the pocket, the pull bar is the thin layer; the rest is void. Take
+    # the frontmost slice's z-extent as the bar and treat the surrounding
+    # opening as clearance, otherwise the grasp point lands inside the bar
+    # itself and the fingers have nothing to close into.
+    tip = inner[inner[:, 0] > bhi[0] - 0.003]
+    if len(tip) >= 4 and np.ptp(tip[:, 2]) < 0.9 * (bhi[2] - blo[2]):
+        bar_lo = np.array([blo[0], tip[:, 1].min(), tip[:, 2].min()])
+        bar_hi = np.array([bhi[0], tip[:, 1].max(), tip[:, 2].max()])
+    else:
+        bar_lo, bar_hi = blo.copy(), bhi.copy()
+    # Hook behind the bar, in the clearance between it and the pocket floor.
+    grasp = np.array([max(rear + 0.002, bar_lo[0] - 0.002),
+                      (bar_lo[1] + bar_hi[1]) / 2.0,
+                      (bar_lo[2] + bar_hi[2]) / 2.0])
+    why = ("recessed|recessed pull: panel x[%.4f,%.4f], pull x[%.4f,%.4f] %.0fx%.0f mm, "
+           "pocket %.1f mm deep, bar %.0f mm tall -> hook behind the bar"
+           % (rear, panel_x, blo[0], bhi[0], 1000 * (bhi[1] - blo[1]),
+              1000 * (bhi[2] - blo[2]), 1000 * (panel_x - rear),
+              1000 * (bar_hi[2] - bar_lo[2])))
+    pocket = dict(rear=rear, front=panel_x,
+                  lo=np.array([rear, blo[1], blo[2]]),
+                  hi=np.array([panel_x, bhi[1], bhi[2]]),
+                  bar_lo=bar_lo, bar_hi=bar_hi)
+    return grasp, (blo, bhi), panel_x, why, pocket
 
 
-def decompose(mesh, out_path, threshold=0.05, max_hulls=32):
+def panel_boxes(panel_lo, panel_hi, pk):
+    """Explicit convex boxes for a door panel that carries a RECESSED pull.
+
+    CoACD merges a shallow pocket into the slab around it -- verified on
+    drawer_walnut, where the grasp point 16 mm inside the recess landed inside a
+    hull, so the fingers met a flat door whatever the wrist orientation. The
+    pocket's position and size are known exactly from the mesh, so build that
+    one region by hand: a frame of four boxes around the opening, plus the pull
+    bar, leaving the void genuinely empty.  Returns [(centre, size), ...].
+    """
+    def bx(a, b):
+        return ([(a[i] + b[i]) / 2 for i in range(3)],
+                [max(b[i] - a[i], 0.002) for i in range(3)])
+    x0, x1 = pk["rear"], pk["front"]
+    (py0, pz0), (py1, pz1) = (panel_lo[1], panel_lo[2]), (panel_hi[1], panel_hi[2])
+    (ky0, kz0), (ky1, kz1) = (pk["lo"][1], pk["lo"][2]), (pk["hi"][1], pk["hi"][2])
+    out = [
+        bx((x0, py0, kz1), (x1, py1, pz1)),      # above the opening
+        bx((x0, py0, pz0), (x1, py1, kz0)),      # below it
+        bx((x0, ky1, kz0), (x1, py1, kz1)),      # one side
+        bx((x0, py0, kz0), (x1, ky0, kz1)),      # the other
+        bx(pk["bar_lo"], pk["bar_hi"]),          # the pull itself
+    ]
+    return [(c, z) for c, z in out if all(v > 0.0015 for v in z)]
+
+
+def decompose(mesh, out_path, threshold=0.05, max_hulls=32, clip_front=None):
     """Convex-decompose a mesh and write it as a multi-`o` OBJ.
 
     Physics engines only take convex shapes. A drawer or a cabinet is a concave
@@ -123,7 +208,18 @@ def decompose(mesh, out_path, threshold=0.05, max_hulls=32):
     """
     import coacd
     coacd.set_log_level("error")
+    if clip_front is not None:
+        # Everything from clip_front forward is built explicitly by
+        # panel_boxes(); decomposing it too would refill the pocket.
+        V = np.asarray(mesh.vertices)
+        keep = np.asarray(mesh.faces)[(V[np.asarray(mesh.faces)][:, :, 0]
+                                       <= clip_front + 1e-4).all(axis=1)]
+        if len(keep) >= 4:
+            mesh = trimesh.Trimesh(vertices=V, faces=keep).process()
     V, F = np.asarray(mesh.vertices), np.asarray(mesh.faces)
+    if len(F) < 4:
+        trimesh.Scene().export(out_path)
+        return 0
     parts = coacd.run_coacd(coacd.Mesh(V, F), threshold=threshold,
                             max_convex_hull=max_hulls, preprocess_mode="auto")
     scene = trimesh.Scene()
@@ -213,13 +309,16 @@ def main():
     _c, _s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
     Tz[:3, :3] = np.array([[_c, -_s, 0], [_s, _c, 0], [0, 0, 1]])
     inner_baked.apply_transform(Tz)
-    handle, handle_bbox, panel_x, why = detect_handle(inner_baked, float(ihi[0]))
+    handle, handle_bbox, panel_x, why, pocket = detect_handle(inner_baked, float(ihi[0]))
+    kind = why.split("|", 1)[0] if handle is not None and "|" in why else "bar"
+    if handle is not None:
+        why = why.split("|", 1)[1]
     if handle is None:
         handle = np.array([ihi[0], (ilo[1] + ihi[1]) / 2.0, ihi[2] - HOOK_DEPTH])
-        panel_x = float(ihi[0])
+        panel_x = float(ihi[0]); pocket = None
         print(f"  -> no handle detected ({why}); using front-face fallback")
     else:
-        print(f"  -> handle detected: {why}")
+        print(f"  -> handle detected [{kind}]: {why}")
     pull = -min(travel * PULL_FRACTION, PULL_MAX)
     # RULE: the place target is where the duck is released above the OPEN tray.
     # It is expressed as the same relative position inside the opened tray that
@@ -275,17 +374,32 @@ def main():
 
     rpy = "0 0 0"   # rotation is baked into the vertices
 
-    def body(link_name, mesh_file, inertial, baked_mesh):
-        """One link: the baked visual mesh plus its convex decomposition."""
+    def body(link_name, mesh_file, inertial, baked_mesh, pk=None):
+        """One link: the baked visual mesh plus its collision geometry.
+
+        Normally that is a CoACD decomposition of the whole mesh. When the link
+        carries a recessed pull, the door panel is clipped off before decomposing
+        and rebuilt from explicit boxes, because CoACD fills the pocket in.
+        """
         vis = baked[mesh_file]
         acd = os.path.splitext(vis)[0].replace("_baked", "") + "_acd.obj"
-        n = decompose(baked_mesh, os.path.join(a.out_dir, "meshes", acd))
-        print(f"  -> {link_name}: {n} convex hulls -> meshes/{acd}")
+        n = decompose(baked_mesh, os.path.join(a.out_dir, "meshes", acd),
+                      clip_front=(pk["rear"] if pk else None))
+        cols = [f'''    <collision><origin xyz="0 0 0" rpy="{rpy}"/>
+      <geometry><mesh filename="meshes/{acd}"/></geometry></collision>''']
+        extra = 0
+        if pk is not None:
+            b = np.array(baked_mesh.bounds)
+            for c, z in panel_boxes(b[0], b[1], pk):
+                cols.append(f'''    <collision><origin xyz="{c[0]:.5f} {c[1]:.5f} {c[2]:.5f}" rpy="0 0 0"/>
+      <geometry><box size="{z[0]:.5f} {z[1]:.5f} {z[2]:.5f}"/></geometry></collision>''')
+                extra += 1
+        print(f"  -> {link_name}: {n} convex hulls -> meshes/{acd}"
+              + (f"  + {extra} explicit panel boxes (pocket kept open)" if extra else ""))
         return f'''  <link name="{link_name}">
 {inertial}    <visual><origin xyz="0 0 0" rpy="{rpy}"/>
       <geometry><mesh filename="meshes/{vis}"/></geometry></visual>
-    <collision><origin xyz="0 0 0" rpy="{rpy}"/>
-      <geometry><mesh filename="meshes/{acd}"/></geometry></collision>
+{chr(10).join(cols)}
   </link>''', n
 
     def inertial_of(link):
@@ -303,7 +417,8 @@ def main():
     # cabinet mouth stays open and the handle keeps its gap without either being
     # special-cased -- the mesh already says where the material is.
     outer_body, n_out = body("outer_box", outer_file, inertial_of(outer_n), baked_m[outer_file])
-    inner_body, n_in = body("inner_box", inner_file, inertial_of(inner_n), baked_m[inner_file])
+    inner_body, n_in = body("inner_box", inner_file, inertial_of(inner_n),
+                            baked_m[inner_file], pk=pocket)
 
     # RULE: drawer_background is a second, kinematic copy stacked underneath to
     # look like a two-drawer cabinet. Its z must follow this asset's shell
@@ -312,6 +427,14 @@ def main():
     shell_h = float(ob.max(0)[2] - ob.min(0)[2])
     bg_gap = shell_h + 0.005          # official leaves ~5 mm between the layers
     print(f"  -> shell height {shell_h:.4f} -> background z offset {-bg_gap:.4f}")
+    # A protruding bar is pinched vertically (fingers above and below it). A
+    # recessed pull cannot be: the pocket is only as tall as the pull, so a pair
+    # of fingers straddling in z hits the door and stops ~15 mm short. Rolling
+    # the grasp frame 90 deg about x turns the pinch on its side, so the finger
+    # pair enters edge-on through the pocket opening.
+    handle_rpy = ("1.5707963268 -1.5707963268 0" if kind == "recessed"
+                  else "0 -1.5707963268 0")
+    print(f"  -> grasp frame rpy      {handle_rpy}   ({'edge-on into pocket' if kind=='recessed' else 'vertical pinch'})")
     new_axis = rot_z(axis, yaw); new_axis = np.round(new_axis, 6)
     urdf = f'''<?xml version="1.0"?>
 <!-- Generated by scripts/make_drawer_asset.py from {os.path.basename(a.urdf)}.
@@ -334,7 +457,7 @@ def main():
   </joint>
 
   <joint name="fixed_handle" type="fixed">
-    <origin xyz="{handle[0]:.6f} {handle[1]:.6f} {handle[2]:.6f}" rpy="0 -1.5707963268 0"/>
+    <origin xyz="{handle[0]:.6f} {handle[1]:.6f} {handle[2]:.6f}" rpy="{handle_rpy}"/>
     <parent link="inner_box"/><child link="handle_xpos"/>
   </joint>
 </robot>

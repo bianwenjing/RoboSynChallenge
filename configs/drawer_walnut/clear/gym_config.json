@@ -231,7 +231,7 @@
                             },
                             "value": [
                                 0.15,
-                                -0.0755,
+                                -0.0366,
                                 0.191
                             ]
                         },
@@ -894,8 +894,8 @@
             "fpath": "assets/UserDrawerWalnut/walnut_drawer.urdf",
             "uid": "drawer",
             "init_pos": [
-                0.7678,
-                0.0194,
+                0.7631,
+                -0.0003,
                 0.9
             ],
             "body_scale": [
@@ -925,8 +925,8 @@
             "fpath": "assets/UserDrawerWalnut/walnut_drawer.urdf",
             "uid": "drawer_background",
             "init_pos": [
-                0.7678,
-                0.0194,
+                0.7631,
+                -0.0003,
                 0.74
             ],
             "body_scale": [

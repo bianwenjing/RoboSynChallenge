@@ -1,100 +1,184 @@
-"""Search physics parameters against how far the drawer actually opens.
+"""Search the gripper drive against how far the drawer fails to close.
 
-calibrate_drawer_grasp.py maximises IK success, which only proves the arm can
-reach the grasp pose -- not that the fingers can drag the drawer. This script
-optimises the thing that matters: travel fraction of the slide joint after
-executing a full trajectory.
+The earlier objective -- how far the drawer OPENS -- turned out to measure the
+wrong half of the task. Every drawer tested opens to within 3 % of its commanded
+pull; what separates a usable asset from an unusable one is whether the fingers
+keep hold through the push-back. drawer_ep0 opens to 0.146 of a commanded 0.150
+and then stalls with 77 mm still open, leaving the duck outside the cabinet
+footprint the success check measures.
 
-Gripper closing ratio lives in affordance_datas, so it can be swept inside a
-single env. Friction lives in the articulation config and needs a rebuild, so it
-is an outer argument -- run the script once per friction value.
+So the objective here is the RESIDUAL opening at the end of the episode.
+
+What is searched, and why these knobs:
+
+  gripper stiffness / max_effort   The gripper is position-controlled with
+      finite stiffness, so grip force is stiffness x tracking error, capped by
+      max_effort. The official 450 / 15 N was set for an 18 mm handle bar on a
+      0.20 kg tray. A thinner bar on a heavier tray needs more: drawer_ep0's
+      fingers are pushed from 4.0 mm to 27.8 mm open mid-push. Raising
+      eef_close_ratio cannot help -- it is already at its 1.0 ceiling.
+  push-back duration              The push edge has a fixed 50-step budget
+      regardless of how far it has to travel or how heavy the tray is.
+
+These interact non-monotonically -- 6000 / 200 N closes WORSE than 2000 / 60 N,
+because too stiff a grip destabilises the contact -- so they are searched rather
+than derived from a formula.
+
+Each sample needs its own process: dexsim segfaults on a second gym.make, and
+drive_pros is read at build time.
 
     python -m scripts.calibrate_drawer_physics \
-        --asset assets/UserDrawerAuto/user_drawer.urdf \
-        --gym_config configs/drawer_open_place/user_drawer_gym_config.json \
-        --action_config configs/drawer_open_place/action_config.json \
-        --num_envs 1 --headless --filter_dataset_saving
+        --gym_config configs/drawer_ep0/clear/gym_config.json \
+        --action_config configs/drawer_ep0/action_config.json \
+        --episodes 3 --headless --filter_dataset_saving
 """
 from __future__ import annotations
-import argparse, json
+import argparse, itertools, json, os, subprocess, sys, tempfile
 import numpy as np
-import gymnasium as gym
 
-import robosynchallenge  # noqa: F401
-from embodichain.lab.gym.utils.gym_utils import (
-    add_env_launcher_args_to_parser, build_env_cfg_from_args)
-import embodichain.lab.gym.utils.gym_utils as gym_utils
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-gym_utils.DEFAULT_MANAGER_MODULES = gym_utils.DEFAULT_MANAGER_MODULES + [
-    "robosynchallenge.managers.actions", "robosynchallenge.managers.datasets",
-    "robosynchallenge.managers.events", "robosynchallenge.managers.observations"]
+# (stiffness, max_effort) for the two right-gripper joints. The first entry is
+# the official value; the rest scale grip force for thinner bars / heavier trays.
+GRIP_GRID = [(450.0, 15.0), (1500.0, 45.0), (3000.0, 90.0)]
+PUSH_STEPS = [50, 80]          # push-back edge budget; 50 is the official value
 
 
-def npy(x):
-    return x.detach().cpu().numpy() if hasattr(x, "detach") else np.asarray(x)
+def patch_gym(src, stiffness, effort, out):
+    cfg = json.load(open(src))
+    dp = cfg["robot"]["drive_pros"]
+    for key in ("right_joint[7-8]", "left_joint[7-8]"):
+        if key in dp["stiffness"]:
+            dp["stiffness"][key] = stiffness
+            # critical damping for a unit-ish inertia keeps the finger from
+            # ringing when the grip force jumps
+            dp["damping"][key] = round(2.0 * (stiffness ** 0.5), 2)
+            dp["max_effort"][key] = effort
+    json.dump(cfg, open(out, "w"), indent=1)
 
 
-def run_once(env, base, drawer, ratios, travel_limit):
-    """Execute one trajectory, return travel fraction (0..1)."""
-    acts = base.create_demo_action_list(action_sentence=0)
-    if acts is None or len(acts) == 0:
-        return None
-    peak = 0.0
-    for act in acts:
-        env.step(act)
-        q = abs(float(npy(drawer.get_qpos())[0, 0]))
-        peak = max(peak, q)
-    return peak / travel_limit
+def patch_action(src, steps, out):
+    cfg = json.load(open(src))
+    n = [0]
+
+    def walk(o):
+        if isinstance(o, dict):
+            if "right_drawer_push_close" in o and isinstance(o["right_drawer_push_close"], dict):
+                e = o["right_drawer_push_close"]
+                if "duration" in e:
+                    e["duration"] = steps
+                    n[0] += 1
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    walk(cfg)
+    json.dump(cfg, open(out, "w"), indent=1)
+    return n[0]
+
+
+def worker(args):
+    """Run `--episodes` trajectories, print the residual-opening statistics."""
+    import gymnasium as gym
+    import robosynchallenge  # noqa: F401
+    from embodichain.lab.gym.utils.gym_utils import (
+        add_env_launcher_args_to_parser, build_env_cfg_from_args)
+    import embodichain.lab.gym.utils.gym_utils as gym_utils
+    gym_utils.DEFAULT_MANAGER_MODULES += [
+        "robosynchallenge.managers.actions", "robosynchallenge.managers.datasets",
+        "robosynchallenge.managers.events", "robosynchallenge.managers.observations"]
+
+    cfg, gc, ac = build_env_cfg_from_args(args)
+    env = gym.make(id=gc["id"], cfg=cfg, **ac)
+    b = env.unwrapped
+    npy = lambda x: x.detach().cpu().numpy() if hasattr(x, "detach") else np.asarray(x)
+    drw = b.sim.get_articulation("drawer")
+    duck = b.sim.get_rigid_object("duck")
+
+    resid, dist = [], []
+    for _ in range(args.episodes):
+        acts = None
+        for _ in range(10):
+            env.reset()
+            acts = b.create_demo_action_list(action_sentence=0)
+            if acts is not None and len(acts) > 0:
+                break
+        if acts is None or len(acts) == 0:
+            continue
+        for act in acts:
+            env.step(act)
+        resid.append(abs(float(npy(drw.get_qpos())[0, 0])))
+        T = npy(drw.get_link_pose("outer_box", to_matrix=True)[0])
+        dw = npy(duck.get_local_pose(to_matrix=True)[0])[:3, 3]
+        dist.append(float(np.linalg.norm(dw[:2] - T[:2, 3])))
+    if resid:
+        ok = sum(1 for d in dist if d <= 0.1)
+        print("WORKER residual_med=%.4f dist_med=%.4f ok=%d/%d"
+              % (float(np.median(resid)), float(np.median(dist)), ok, len(dist)), flush=True)
+    else:
+        print("WORKER residual_med=nan dist_med=nan ok=0/0", flush=True)
+    env.close()
 
 
 def main():
     ap = argparse.ArgumentParser()
-    add_env_launcher_args_to_parser(ap)
-    ap.add_argument("--asset", required=True)
-    ap.add_argument("--ratios", type=float, nargs="*", default=[0.6, 0.8, 1.0],
-                    help="gripper close ratios to try")
-    ap.add_argument("--repeats", type=int, default=2, help="scenes per ratio")
-    a = ap.parse_args()
+    ap.add_argument("--gym_config", required=True)
+    ap.add_argument("--action_config", required=True)
+    ap.add_argument("--episodes", type=int, default=3)
+    ap.add_argument("--num_envs", type=int, default=1)
+    ap.add_argument("--headless", action="store_true")
+    ap.add_argument("--filter_dataset_saving", action="store_true")
+    ap.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    args, rest = ap.parse_known_args()
 
-    C = json.load(open(a.asset.rsplit(".", 1)[0] + "_constants.json"))
-    travel_limit = abs(C.get("_travel", 0.18))
+    if args.worker:
+        import argparse as _a
+        from embodichain.lab.gym.utils.gym_utils import add_env_launcher_args_to_parser
+        p = _a.ArgumentParser(); add_env_launcher_args_to_parser(p)
+        p.add_argument("--episodes", type=int, default=3)
+        p.add_argument("--worker", action="store_true")
+        worker(p.parse_args())
+        return
 
-    env_cfg, gc, ac = build_env_cfg_from_args(a)
-    env = gym.make(id=gc["id"], cfg=env_cfg, **ac)
-    base = env.unwrapped
-    drawer = base.sim.get_articulation("drawer")
-    results = {}
-    try:
-        for r in a.ratios:
-            vals = []
-            for k in range(a.repeats):
-                env.reset()
-                for key in ("right_eef_close_ratio", "left_eef_close_ratio"):
-                    if key in base.affordance_datas:
-                        base.affordance_datas[key] = r
-                f = run_once(env, base, drawer, r, travel_limit)
-                if f is not None:
-                    vals.append(f)
-                print("  ratio %.2f  scene %d/%d  travel %s" %
-                      (r, k + 1, a.repeats, "IK fail" if f is None else "%.1f%%" % (f * 100)),
-                      flush=True)
-            results[r] = float(np.mean(vals)) if vals else 0.0
+    tmp = tempfile.mkdtemp(prefix="drawercal_")
+    rows = []
+    for (st, ef), steps in itertools.product(GRIP_GRID, PUSH_STEPS):
+        g = os.path.join(tmp, f"gym_{st:.0f}_{ef:.0f}.json")
+        a = os.path.join(tmp, f"act_{steps}.json")
+        patch_gym(os.path.join(REPO, args.gym_config), st, ef, g)
+        if patch_action(os.path.join(REPO, args.action_config), steps, a) == 0:
+            print("!! push-back edge 'right_drawer_push_close' not found")
+        cmd = [sys.executable, os.path.abspath(__file__), "--worker",
+               "--gym_config", g, "--action_config", a,
+               "--num_envs", str(args.num_envs), "--episodes", str(args.episodes)]
+        if args.headless:
+            cmd.append("--headless")
+        if args.filter_dataset_saving:
+            cmd.append("--filter_dataset_saving")
+        out = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True).stdout
+        line = next((l for l in out.splitlines() if l.startswith("WORKER")), "")
+        vals = dict(kv.split("=") for kv in line.split()[1:]) if line else {}
+        r = float(vals.get("residual_med", "nan"))
+        d = float(vals.get("dist_med", "nan"))
+        ok = vals.get("ok", "0/0")
+        rows.append((st, ef, steps, r, d, ok))
+        print("  stiffness %6.0f  effort %5.0f  push %3d ->  residual %.4f  dist %.4f  %s"
+              % (st, ef, steps, r, d, ok), flush=True)
 
-        print("\nclose ratio -> mean travel fraction")
-        for r, v in results.items():
-            bar = "#" * int(round(v * 40))
-            print("  %.2f  %6.1f%%  |%s" % (r, v * 100, bar))
-        best_r = max(results, key=results.get)
-        print("\nbest close ratio %.2f  (%.1f%% travel)" % (best_r, results[best_r] * 100))
-        if results[best_r] < 0.05:
-            print("NOTE: nothing moved the drawer. Try a different --friction run,\n"
-                  "      or the handle may be too thin for this gripper to hold.")
-        C.setdefault("physics", {})["eef_close_ratio"] = round(best_r, 3)
-        C["travel_by_ratio"] = {str(k): round(v, 4) for k, v in results.items()}
-        json.dump(C, open(a.asset.rsplit(".", 1)[0] + "_constants.json", "w"), indent=2)
-        print("written back to constants.json")
-    finally:
-        env.close()
+    good = [x for x in rows if x[3] == x[3]]
+    if not good:
+        print("\nno usable sample"); return
+    best = min(good, key=lambda x: (x[3], x[4]))
+    print("\nbest: stiffness=%.0f max_effort=%.0f push_steps=%d"
+          "   residual %.4f  duck-drawer %.4f  %s" % (best[0], best[1], best[2], best[3], best[4], best[5]))
+    print("\nApply to the gym_config's robot.drive_pros:")
+    print('  "stiffness":  {"right_joint[7-8]": %.1f}' % best[0])
+    print('  "damping":    {"right_joint[7-8]": %.2f}' % (2.0 * best[0] ** 0.5))
+    print('  "max_effort": {"right_joint[7-8]": %.1f}' % best[1])
+    if best[2] != PUSH_STEPS[0]:
+        print("And the action_config's right_drawer_push_close duration: %d" % best[2])
 
 
 if __name__ == "__main__":
