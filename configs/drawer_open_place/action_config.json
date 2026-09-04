@@ -2,7 +2,9 @@
     "scope": {
         "left_arm": {
             "type": "DiGraph",
-            "dim": [6],
+            "dim": [
+                6
+            ],
             "init": {
                 "method": "current_qpos",
                 "init_node_name": "left_arm_init_qpos"
@@ -11,11 +13,15 @@
         },
         "left_eef": {
             "type": "DiGraph",
-            "dim": [1],
+            "dim": [
+                1
+            ],
             "init": {
                 "method": "given_qpos",
                 "kwargs": {
-                    "given_qpos": [0]
+                    "given_qpos": [
+                        0
+                    ]
                 },
                 "init_node_name": "left_eef_init_qpos"
             },
@@ -23,7 +29,9 @@
         },
         "right_arm": {
             "type": "DiGraph",
-            "dim": [6],
+            "dim": [
+                6
+            ],
             "init": {
                 "method": "current_qpos",
                 "init_node_name": "right_arm_init_qpos"
@@ -32,11 +40,15 @@
         },
         "right_eef": {
             "type": "DiGraph",
-            "dim": [1],
+            "dim": [
+                1
+            ],
             "init": {
                 "method": "given_qpos",
                 "kwargs": {
-                    "given_qpos": [0]
+                    "given_qpos": [
+                        0
+                    ]
                 },
                 "init_node_name": "right_eef_init_qpos"
             },
@@ -89,8 +101,22 @@
                                             {
                                                 "name": "get_replaced_qpos",
                                                 "kwargs": {
-                                                    "replace_value": [0.0, 0.7853982, -0.7853982, 0.0, 0.7853982, 0.0],
-                                                    "joint_list_replace": [0, 1, 2, 3, 4, 5]
+                                                    "replace_value": [
+                                                        0.0,
+                                                        0.7853982,
+                                                        -0.7853982,
+                                                        0.0,
+                                                        0.7853982,
+                                                        0.0
+                                                    ],
+                                                    "joint_list_replace": [
+                                                        0,
+                                                        1,
+                                                        2,
+                                                        3,
+                                                        4,
+                                                        5
+                                                    ]
                                                 }
                                             }
                                         ]
@@ -132,15 +158,13 @@
             {
                 "left_arm_aim_duck_qpos": {
                     "name": "generate_left_arm_aim_qpos",
-                    "kwargs": {
-                    }
+                    "kwargs": {}
                 }
             },
             {
                 "left_arm_aim_drawer_qpos": {
                     "name": "generate_left_arm_aim_drawer_qpos",
-                    "kwargs": {
-                    }
+                    "kwargs": {}
                 }
             },
             {
@@ -244,7 +268,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['left_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -307,7 +334,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['left_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -373,7 +403,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['left_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -401,7 +434,7 @@
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
-                                                    "offset_value": 0.2,
+                                                    "offset_value": "env.affordance_datas['drawer_inner_offset_xyz'][0]",
                                                     "direction": "x",
                                                     "mode": "intrinsic"
                                                 }
@@ -409,7 +442,7 @@
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
-                                                    "offset_value": -0.1,
+                                                    "offset_value": "env.affordance_datas['drawer_inner_offset_xyz'][1]",
                                                     "direction": "y",
                                                     "mode": "intrinsic"
                                                 }
@@ -417,7 +450,7 @@
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
-                                                    "offset_value": 0.15,
+                                                    "offset_value": "env.affordance_datas['drawer_inner_offset_xyz'][2]",
                                                     "direction": "z",
                                                     "mode": "intrinsic"
                                                 }
@@ -456,7 +489,6 @@
                                                     "mode": "intrinsic"
                                                 }
                                             }
-
                                         ]
                                     }
                                 ]
@@ -487,7 +519,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['left_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -592,7 +627,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['left_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -663,7 +701,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['left_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -790,8 +831,7 @@
             {
                 "right_arm_aim_drawer_qpos": {
                     "name": "generate_right_arm_aim_qpos",
-                    "kwargs": {
-                    }
+                    "kwargs": {}
                 }
             },
             {
@@ -877,7 +917,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['right_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -911,7 +954,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['right_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -948,7 +994,7 @@
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
-                                                    "offset_value": -0.14,
+                                                    "offset_value": "env.affordance_datas['drawer_pull_distance']",
                                                     "direction": "x",
                                                     "mode": "extrinsic"
                                                 }
@@ -983,7 +1029,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['right_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -1055,7 +1104,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['right_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -1080,7 +1132,6 @@
                                         "name": "no_validation",
                                         "kwargs": {},
                                         "pass_processes": [
-
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
@@ -1089,7 +1140,6 @@
                                                     "mode": "intrinsic"
                                                 }
                                             }
-
                                         ]
                                     }
                                 ]
@@ -1120,7 +1170,10 @@
                                         "name": "is_qpos_flip",
                                         "kwargs": {
                                             "qpos_ref": "env.affordance_datas['right_arm_init_qpos']",
-                                            "qpos_ids": [3, 4],
+                                            "qpos_ids": [
+                                                3,
+                                                4
+                                            ],
                                             "threshold": 3.455751918948773,
                                             "mode": "delta",
                                             "return_inverse": true
@@ -1308,7 +1361,7 @@
             }
         ],
         "right_arm": [
-             {
+            {
                 "right_to_handle_start_pre": {
                     "src": "right_arm_init_qpos",
                     "sink": "right_arm_handle_start_pre_qpos",

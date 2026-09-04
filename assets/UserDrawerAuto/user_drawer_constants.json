@@ -1,0 +1,38 @@
+{
+  "drawer_pull_distance": -0.144,
+  "drawer_inner_offset_xyz": [
+    0.1999,
+    -0.1003,
+    0.1505
+  ],
+  "init_pos_x": 0.775,
+  "position_range": [
+    [
+      -0.15,
+      -0.18,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "handle_local_z": -0.015,
+  "front_face_z_range": [
+    -0.033,
+    0.0365
+  ],
+  "_handle_reach": 0.127,
+  "background_z_offset": -0.095,
+  "shell_height": 0.09,
+  "physics": {
+    "static_friction": 5.0,
+    "dynamic_friction": 4.8,
+    "eef_close_ratio": 1.0,
+    "drive_stiffness": 5.0,
+    "drive_damping": 1.5
+  },
+  "_travel": 0.18,
+  "_baked_yaw_deg": 90.0
+}

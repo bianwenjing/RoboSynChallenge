@@ -12,49 +12,166 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "light_0"},
-                    "position_range": [[-0.5, -0.5, 2], [0.5, 0.5, 2]],
-                    "color_range": [[0.6, 0.6, 0.6], [1, 1, 1]],
-                    "intensity_range": [10.0, 30.0]
+                    "entity_cfg": {
+                        "uid": "light_0"
+                    },
+                    "position_range": [
+                        [
+                            -0.5,
+                            -0.5,
+                            2
+                        ],
+                        [
+                            0.5,
+                            0.5,
+                            2
+                        ]
+                    ],
+                    "color_range": [
+                        [
+                            0.6,
+                            0.6,
+                            0.6
+                        ],
+                        [
+                            1,
+                            1,
+                            1
+                        ]
+                    ],
+                    "intensity_range": [
+                        10.0,
+                        30.0
+                    ]
                 }
             },
             "random_camera_high_intrinsics": {
                 "func": "randomize_camera_intrinsics",
                 "mode": "reset",
                 "params": {
-                    "entity_cfg": {"uid": "cam_high"},
-                    "focal_x_range": [-50, 50],
-                    "focal_y_range": [-50, 50]
+                    "entity_cfg": {
+                        "uid": "cam_high"
+                    },
+                    "focal_x_range": [
+                        -50,
+                        50
+                    ],
+                    "focal_y_range": [
+                        -50,
+                        50
+                    ]
                 }
             },
             "random_camera_high_extrinsics": {
                 "func": "randomize_camera_extrinsics",
                 "mode": "reset",
                 "params": {
-                    "entity_cfg": {"uid": "cam_high"},
-                    "pos_range": [[0.0, -0.02, 0.0], [0.02, 0.02, 0.02]],
-                    "euler_range": [[-0.175, -0.175, -0.175], [0.175, 0.175, 0.175]]
+                    "entity_cfg": {
+                        "uid": "cam_high"
+                    },
+                    "pos_range": [
+                        [
+                            0.0,
+                            -0.02,
+                            0.0
+                        ],
+                        [
+                            0.02,
+                            0.02,
+                            0.02
+                        ]
+                    ],
+                    "euler_range": [
+                        [
+                            -0.175,
+                            -0.175,
+                            -0.175
+                        ],
+                        [
+                            0.175,
+                            0.175,
+                            0.175
+                        ]
+                    ]
                 }
             },
             "random_robot_init_eef_pose": {
                 "func": "randomize_robot_eef_pose",
                 "mode": "reset",
                 "params": {
-                    "entity_cfg": {"uid": "CobotMagic", "control_parts": ["left_arm", "right_arm"]},
-                    "position_range":  [[-0.01, -0.01, -0.01], [0.01, 0.01, 0]]
+                    "entity_cfg": {
+                        "uid": "CobotMagic",
+                        "control_parts": [
+                            "left_arm",
+                            "right_arm"
+                        ]
+                    },
+                    "position_range": [
+                        [
+                            -0.01,
+                            -0.01,
+                            -0.01
+                        ],
+                        [
+                            0.01,
+                            0.01,
+                            0
+                        ]
+                    ]
                 }
             },
             "random_robot_qpos": {
                 "func": "randomize_robot_qpos",
                 "mode": "reset",
                 "params": {
-                    "entity_cfg": {"uid": "CobotMagic"},
+                    "entity_cfg": {
+                        "uid": "CobotMagic"
+                    },
                     "qpos_range": [
-                        [-0.06, -0.05, -0.06, -0.06, -0.05, -0.05, -0.06, -0.05, -0.06, -0.06, -0.05, -0.05],
-                        [0.06, 0.05, 0.06, 0.06, 0.05, 0.05, 0.06, 0.05, 0.06, 0.06, 0.05, 0.05]
+                        [
+                            -0.06,
+                            -0.05,
+                            -0.06,
+                            -0.06,
+                            -0.05,
+                            -0.05,
+                            -0.06,
+                            -0.05,
+                            -0.06,
+                            -0.06,
+                            -0.05,
+                            -0.05
+                        ],
+                        [
+                            0.06,
+                            0.05,
+                            0.06,
+                            0.06,
+                            0.05,
+                            0.05,
+                            0.06,
+                            0.05,
+                            0.06,
+                            0.06,
+                            0.05,
+                            0.05
+                        ]
                     ],
                     "relative_qpos": true,
-                    "joint_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                    "joint_ids": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11
+                    ]
                 }
             },
             "random_material": {
@@ -62,10 +179,23 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "table"},
+                    "entity_cfg": {
+                        "uid": "table"
+                    },
                     "random_texture_prob": 0.5,
                     "texture_path": "assets/background_texture/100",
-                    "base_color_range": [[0.2, 0.2, 0.2], [1.0, 1.0, 1.0]]
+                    "base_color_range": [
+                        [
+                            0.2,
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    ]
                 }
             },
             "random_robot_material": {
@@ -73,10 +203,26 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "CobotMagic", "link_names": [".*"]},
+                    "entity_cfg": {
+                        "uid": "CobotMagic",
+                        "link_names": [
+                            ".*"
+                        ]
+                    },
                     "random_texture_prob": 0.5,
                     "texture_path": "assets/background_texture/100",
-                    "base_color_range": [[0.2, 0.2, 0.2], [1.0, 1.0, 1.0]]
+                    "base_color_range": [
+                        [
+                            0.2,
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    ]
                 }
             },
             "random_plane_material": {
@@ -84,10 +230,23 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "default_plane"},
+                    "entity_cfg": {
+                        "uid": "default_plane"
+                    },
                     "random_texture_prob": 0.5,
                     "texture_path": "assets/background_texture/100",
-                    "base_color_range": [[0.2, 0.2, 0.2], [1.0, 1.0, 1.0]]
+                    "base_color_range": [
+                        [
+                            0.2,
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    ]
                 }
             },
             "random_duck_material": {
@@ -95,10 +254,23 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "duck"},
+                    "entity_cfg": {
+                        "uid": "duck"
+                    },
                     "random_texture_prob": 0.5,
                     "texture_path": "assets/background_texture/100",
-                    "base_color_range": [[0.2, 0.2, 0.2], [1.0, 1.0, 1.0]]
+                    "base_color_range": [
+                        [
+                            0.2,
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    ]
                 }
             },
             "random_drawer_material": {
@@ -106,10 +278,26 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "drawer", "link_names": [".*"]},
+                    "entity_cfg": {
+                        "uid": "drawer",
+                        "link_names": [
+                            ".*"
+                        ]
+                    },
                     "random_texture_prob": 0.5,
                     "texture_path": "assets/background_texture/100",
-                    "base_color_range": [[0.2, 0.2, 0.2], [1.0, 1.0, 1.0]]
+                    "base_color_range": [
+                        [
+                            0.2,
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    ]
                 }
             },
             "random_drawer_background_material": {
@@ -117,19 +305,59 @@
                 "mode": "interval",
                 "interval_step": 10,
                 "params": {
-                    "entity_cfg": {"uid": "drawer_background", "link_names": [".*"]},
+                    "entity_cfg": {
+                        "uid": "drawer_background",
+                        "link_names": [
+                            ".*"
+                        ]
+                    },
                     "random_texture_prob": 0.5,
                     "texture_path": "assets/background_texture/100",
-                    "base_color_range": [[0.2, 0.2, 0.2], [1.0, 1.0, 1.0]]
+                    "base_color_range": [
+                        [
+                            0.2,
+                            0.2,
+                            0.2
+                        ],
+                        [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    ]
                 }
             },
             "random_duck_pose": {
                 "func": "randomize_rigid_object_pose",
                 "mode": "reset",
                 "params": {
-                    "entity_cfg": {"uid": "duck"},
-                    "position_range": [[0.53, 0.18, 0.87], [0.8, 0.35, 0.87]],
-                    "rotation_range": [[0, 0, -30], [0, 0, 30]],
+                    "entity_cfg": {
+                        "uid": "duck"
+                    },
+                    "position_range": [
+                        [
+                            0.53,
+                            0.18,
+                            0.87
+                        ],
+                        [
+                            0.8,
+                            0.35,
+                            0.87
+                        ]
+                    ],
+                    "rotation_range": [
+                        [
+                            0,
+                            0,
+                            -30
+                        ],
+                        [
+                            0,
+                            0,
+                            30
+                        ]
+                    ],
                     "relative_position": false,
                     "relative_rotation": true
                 }
@@ -139,10 +367,25 @@
                 "mode": "reset",
                 "params": {
                     "entity_cfgs": [
-                        {"uid": "drawer"},
-                        {"uid": "drawer_background"}
+                        {
+                            "uid": "drawer"
+                        },
+                        {
+                            "uid": "drawer_background"
+                        }
                     ],
-                    "position_range": [[-0.01, -0.18, 0.0], [0.05, 0.0, 0.0]],
+                    "position_range": [
+                        [
+                            -0.01,
+                            -0.18,
+                            0.0
+                        ],
+                        [
+                            0.05,
+                            0.0,
+                            0.0
+                        ]
+                    ],
                     "relative_position": true,
                     "physics_update_step": 1
                 }
@@ -152,22 +395,68 @@
                 "mode": "reset",
                 "params": {
                     "entity_cfgs": [
-                        {"uid": "distractor_0"},
-                        {"uid": "distractor_1"}
+                        {
+                            "uid": "distractor_0"
+                        },
+                        {
+                            "uid": "distractor_1"
+                        }
                     ],
                     "library_index_path": "robosynchallenge/Distractor/ASSET_INDEX.json",
-                    "categories": ["PaperCup", "fork", "spoon"],
+                    "categories": [
+                        "PaperCup",
+                        "fork",
+                        "spoon"
+                    ],
                     "position_ranges": [
-                        [[0.4, -0.35, 0.89], [1.0, 0.35, 0.92]],
-                        [[0.4, -0.35, 0.89], [1.0, 0.35, 0.92]]
+                        [
+                            [
+                                0.4,
+                                -0.35,
+                                0.89
+                            ],
+                            [
+                                1.0,
+                                0.35,
+                                0.92
+                            ]
+                        ],
+                        [
+                            [
+                                0.4,
+                                -0.35,
+                                0.89
+                            ],
+                            [
+                                1.0,
+                                0.35,
+                                0.92
+                            ]
+                        ]
                     ],
-                    "appear_probs": [1.0, 1.0],
+                    "appear_probs": [
+                        1.0,
+                        1.0
+                    ],
                     "z_rotation_ranges": [
-                        [-180.0, 180.0],
-                        [-180.0, 180.0]
+                        [
+                            -180.0,
+                            180.0
+                        ],
+                        [
+                            -180.0,
+                            180.0
+                        ]
                     ],
-                    "hide_position": [0.0, 0.0, -10.0],
-                    "avoid_uids": ["duck", "drawer"],
+                    "hide_position": [
+                        0.0,
+                        0.0,
+                        -10.0
+                    ],
+                    "avoid_uids": [
+                        "duck",
+                        "drawer"
+                    ],
                     "min_distance_to_avoid": 0.4,
                     "max_resample_attempts": 100,
                     "physics_update_step": 1
@@ -232,7 +521,10 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [0.84, -0.1]
+                            "value": [
+                                0.84,
+                                -0.1
+                            ]
                         },
                         {
                             "name": "drawer_pull_distance",
@@ -240,7 +532,7 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": -0.12
+                            "value": -0.14
                         },
                         {
                             "name": "duck_grasp_offset_xyz",
@@ -248,7 +540,11 @@
                             "entity_cfg": {
                                 "uid": "duck"
                             },
-                            "value": [-0.015, 0.01, 0.033]
+                            "value": [
+                                -0.015,
+                                0.01,
+                                0.033
+                            ]
                         },
                         {
                             "name": "duck_hover_height",
@@ -272,7 +568,11 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [-0.14, 0.05, 0.18]
+                            "value": [
+                                0.2,
+                                -0.1,
+                                0.15
+                            ]
                         },
                         {
                             "name": "drawer_place_hover_offset_xyz",
@@ -280,7 +580,11 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [0.0, 0.0, 0.08]
+                            "value": [
+                                0.0,
+                                0.0,
+                                0.08
+                            ]
                         },
                         {
                             "name": "right_handle_start_offset_xyz",
@@ -288,7 +592,11 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [0.0, 0.0, 0.0]
+                            "value": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
                         },
                         {
                             "name": "right_handle_contact_offset_xyz",
@@ -296,7 +604,11 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [0.0, 0.0, 0.0]
+                            "value": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ]
                         },
                         {
                             "name": "right_handle_pull_offset_xyz",
@@ -304,7 +616,11 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [-0.06, 0.0, 0.0]
+                            "value": [
+                                -0.06,
+                                0.0,
+                                0.0
+                            ]
                         },
                         {
                             "name": "right_retreat_offset_xyz",
@@ -312,14 +628,20 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "value": [-0.17, 0.0, 0.0]
+                            "value": [
+                                -0.17,
+                                0.0,
+                                0.0
+                            ]
                         },
                         {
                             "name": "left_eef_close_ratio",
                             "mode": "static",
                             "entity_cfg": {
                                 "uid": "CobotMagic",
-                                "control_parts": ["left_arm"]
+                                "control_parts": [
+                                    "left_arm"
+                                ]
                             },
                             "value": 1.0
                         },
@@ -328,7 +650,9 @@
                             "mode": "static",
                             "entity_cfg": {
                                 "uid": "CobotMagic",
-                                "control_parts": ["right_arm"]
+                                "control_parts": [
+                                    "right_arm"
+                                ]
                             },
                             "value": 1.0
                         },
@@ -370,14 +694,20 @@
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "attrs": ["pose"],
+                            "attrs": [
+                                "pose",
+                                "drawer_pull_distance"
+                            ],
                             "prefix": true
                         },
                         {
                             "entity_cfg": {
                                 "uid": "drawer"
                             },
-                            "attrs": ["handle_pose"],
+                            "attrs": [
+                                "handle_pose",
+                                "drawer_pull_distance"
+                            ],
                             "prefix": true
                         },
                         {
@@ -403,7 +733,8 @@
                                 "right_handle_contact_offset_xyz",
                                 "right_handle_pull_offset_xyz",
                                 "right_retreat_offset_xyz",
-                                "drawer_success_distance_threshold"
+                                "drawer_success_distance_threshold",
+                                "drawer_pull_distance"
                             ],
                             "prefix": false
                         },
@@ -411,15 +742,22 @@
                             "entity_cfg": {
                                 "uid": "CobotMagic"
                             },
-                            "attrs": ["left_eef_close_ratio", "right_eef_close_ratio"],
+                            "attrs": [
+                                "left_eef_close_ratio",
+                                "right_eef_close_ratio"
+                            ],
                             "prefix": false
                         },
                         {
                             "entity_cfg": {
                                 "uid": "CobotMagic",
-                                "control_parts": ["left_arm"]
+                                "control_parts": [
+                                    "left_arm"
+                                ]
                             },
-                            "attrs": ["left_arm_base_pose"],
+                            "attrs": [
+                                "left_arm_base_pose"
+                            ],
                             "pose_register_params": {
                                 "compute_relative": false,
                                 "compute_pose_object_to_arena": false,
@@ -430,9 +768,13 @@
                         {
                             "entity_cfg": {
                                 "uid": "CobotMagic",
-                                "control_parts": ["right_arm"]
+                                "control_parts": [
+                                    "right_arm"
+                                ]
                             },
-                            "attrs": ["right_arm_base_pose"],
+                            "attrs": [
+                                "right_arm_base_pose"
+                            ],
                             "pose_register_params": {
                                 "compute_relative": false,
                                 "compute_pose_object_to_arena": false,
@@ -452,7 +794,10 @@
                 "mode": "modify",
                 "name": "robot/qpos",
                 "params": {
-                    "joint_ids": [6, 13]
+                    "joint_ids": [
+                        6,
+                        13
+                    ]
                 }
             },
             "duck_pose": {
@@ -460,7 +805,9 @@
                 "mode": "add",
                 "name": "duck_pose",
                 "params": {
-                    "entity_cfg": {"uid": "duck"}
+                    "entity_cfg": {
+                        "uid": "duck"
+                    }
                 }
             },
             "drawer_pose": {
@@ -468,7 +815,9 @@
                 "mode": "add",
                 "name": "drawer_pose",
                 "params": {
-                    "entity_cfg": {"uid": "drawer"}
+                    "entity_cfg": {
+                        "uid": "drawer"
+                    }
                 }
             }
         },
@@ -511,8 +860,29 @@
     "robot": {
         "uid": "CobotMagic",
         "robot_type": "CobotMagic",
-        "init_pos": [0.0, 0.0, 0.835],
-        "init_qpos": [-0.05918411, 0.08932595, 0.00076794, 0.00970403, -0.12870058, -0.21027726, -0.13548991, -0.08838347, 0.29586821,0.39285615,0.13372713,0.08686504,0.0,0.0,0.0,0.0],
+        "init_pos": [
+            0.0,
+            0.0,
+            0.835
+        ],
+        "init_qpos": [
+            -0.05918411,
+            0.08932595,
+            0.00076794,
+            0.00970403,
+            -0.12870058,
+            -0.21027726,
+            -0.13548991,
+            -0.08838347,
+            0.29586821,
+            0.39285615,
+            0.13372713,
+            0.08686504,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        ],
         "min_position_iters": 32,
         "min_velocity_iters": 8,
         "attrs": {
@@ -557,7 +927,12 @@
             "width": 640,
             "height": 480,
             "enable_mask": false,
-            "intrinsics": [606.315186, 606.100952, 320.549316, 245.877106],
+            "intrinsics": [
+                606.315186,
+                606.100952,
+                320.549316,
+                245.877106
+            ],
             "extrinsics": {
                 "eye": [
                     0.257046,
@@ -582,11 +957,25 @@
             "width": 640,
             "height": 480,
             "enable_mask": false,
-            "intrinsics": [603.117004394531, 602.418640136719, 326.727478027344, 251.933990478516],
+            "intrinsics": [
+                603.117004394531,
+                602.418640136719,
+                326.727478027344,
+                251.933990478516
+            ],
             "extrinsics": {
                 "parent": "right_link6",
-                "pos": [-0.12, 0.01, 0.03],
-                "quat": [0.1949, 0.6797, -0.6797, -0.1949]
+                "pos": [
+                    -0.12,
+                    0.01,
+                    0.03
+                ],
+                "quat": [
+                    0.1949,
+                    0.6797,
+                    -0.6797,
+                    -0.1949
+                ]
             }
         },
         {
@@ -595,18 +984,36 @@
             "width": 640,
             "height": 480,
             "enable_mask": false,
-            "intrinsics": [603.117004394531, 602.418640136719, 326.727478027344, 251.933990478516],
+            "intrinsics": [
+                603.117004394531,
+                602.418640136719,
+                326.727478027344,
+                251.933990478516
+            ],
             "extrinsics": {
                 "parent": "left_link6",
-                "pos": [-0.12, 0.01, 0.03],
-                "quat": [0.1949, 0.6797, -0.6797, -0.1949]
+                "pos": [
+                    -0.12,
+                    0.01,
+                    0.03
+                ],
+                "quat": [
+                    0.1949,
+                    0.6797,
+                    -0.6797,
+                    -0.1949
+                ]
             }
         }
     ],
     "light": {
         "indirect": {
-            "emission_light":{
-                "color": [1.0, 1.0, 1.0],
+            "emission_light": {
+                "color": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
                 "intensity": 180
             }
         },
@@ -614,9 +1021,17 @@
             {
                 "uid": "light_0",
                 "light_type": "point",
-                "color": [1.0, 1.0, 1.0],
+                "color": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
                 "intensity": 15.0,
-                "init_pos": [0.8, 0.0, 2.0],
+                "init_pos": [
+                    0.8,
+                    0.0,
+                    2.0
+                ],
                 "radius": 20.0
             }
         ]
@@ -626,33 +1041,63 @@
             "uid": "table",
             "shape": {
                 "shape_type": "Cube",
-                "size": [1.0, 1.0, 0.1],
+                "size": [
+                    1.0,
+                    1.0,
+                    0.1
+                ],
                 "visual_material": {
                     "uid": "white_table_mat",
-                    "base_color": [1.0, 1.0, 1.0, 1.0],
+                    "base_color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
                     "metallic": 0.0,
                     "roughness": 1.0
                 }
             },
-            "attrs" : {
+            "attrs": {
                 "mass": 10.0,
                 "static_friction": 0.95,
                 "dynamic_friction": 0.9,
                 "restitution": 0.01
             },
-            "body_scale": [1, 1, 1],
+            "body_scale": [
+                1,
+                1,
+                1
+            ],
             "body_type": "kinematic",
-            "init_pos": [0.725, 0.0, 0.775],
-            "init_rot": [0, 0, 0]
+            "init_pos": [
+                0.725,
+                0.0,
+                0.775
+            ],
+            "init_rot": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "uid": "green_back_wall",
             "shape": {
                 "shape_type": "Cube",
-                "size": [0.04, 2.2, 1.6],
+                "size": [
+                    0.04,
+                    2.2,
+                    1.6
+                ],
                 "visual_material": {
                     "uid": "real_green_wall_mat",
-                    "base_color": [0.0, 0.48, 0.16, 1.0],
+                    "base_color": [
+                        0.0,
+                        0.48,
+                        0.16,
+                        1.0
+                    ],
                     "metallic": 0.0,
                     "roughness": 1.0
                 }
@@ -663,19 +1108,40 @@
                 "dynamic_friction": 0.9,
                 "restitution": 0.01
             },
-            "body_scale": [1, 1, 1],
+            "body_scale": [
+                1,
+                1,
+                1
+            ],
             "body_type": "kinematic",
-            "init_pos": [1.18, 0.0,0.8 ],
-            "init_rot": [0, 0, 0]
+            "init_pos": [
+                1.18,
+                0.0,
+                0.8
+            ],
+            "init_rot": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "uid": "green_left_wall",
             "shape": {
                 "shape_type": "Cube",
-                "size": [0.9, 0.04, 1.6],
+                "size": [
+                    0.9,
+                    0.04,
+                    1.6
+                ],
                 "visual_material": {
                     "uid": "real_green_wall_mat",
-                    "base_color": [0.0, 0.48, 0.16, 1.0],
+                    "base_color": [
+                        0.0,
+                        0.48,
+                        0.16,
+                        1.0
+                    ],
                     "metallic": 0.0,
                     "roughness": 1.0
                 }
@@ -686,19 +1152,40 @@
                 "dynamic_friction": 0.9,
                 "restitution": 0.01
             },
-            "body_scale": [1, 1, 1],
+            "body_scale": [
+                1,
+                1,
+                1
+            ],
             "body_type": "kinematic",
-            "init_pos": [0.74, 1.0, 0.8],
-            "init_rot": [0, 0, 0]
+            "init_pos": [
+                0.74,
+                1.0,
+                0.8
+            ],
+            "init_rot": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "uid": "green_right_wall",
             "shape": {
                 "shape_type": "Cube",
-                "size": [0.9, 0.04, 1.6],
+                "size": [
+                    0.9,
+                    0.04,
+                    1.6
+                ],
                 "visual_material": {
                     "uid": "real_green_wall_mat",
-                    "base_color": [0.0, 0.48, 0.16, 1.0],
+                    "base_color": [
+                        0.0,
+                        0.48,
+                        0.16,
+                        1.0
+                    ],
                     "metallic": 0.0,
                     "roughness": 1.0
                 }
@@ -709,10 +1196,22 @@
                 "dynamic_friction": 0.9,
                 "restitution": 0.01
             },
-            "body_scale": [1, 1, 1],
+            "body_scale": [
+                1,
+                1,
+                1
+            ],
             "body_type": "kinematic",
-            "init_pos": [0.74, -1.0, 0.8],
-            "init_rot": [0, 0, 0]
+            "init_pos": [
+                0.74,
+                -1.0,
+                0.8
+            ],
+            "init_rot": [
+                0,
+                0,
+                0
+            ]
         }
     ],
     "rigid_object": [
@@ -804,10 +1303,22 @@
         {
             "fpath": "SlidingBoxDrawer/SlidingBoxDrawer.urdf",
             "uid": "drawer_background",
-            "init_pos": [0.8, 0.0, 0.825],
-            "body_scale": [1.0, 1.0, 0.35],
+            "init_pos": [
+                0.8,
+                0.0,
+                0.825
+            ],
+            "body_scale": [
+                1.0,
+                1.0,
+                0.35
+            ],
             "body_type": "kinematic",
-            "init_rot": [0.3, 0, 180],
+            "init_rot": [
+                0.3,
+                0,
+                180
+            ],
             "attrs": {
                 "static_friction": 5.0,
                 "dynamic_friction": 4.8,
