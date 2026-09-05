@@ -37,6 +37,7 @@ PULL_MAX = 0.15
 # once against the action graph's hard-coded (0.20, -0.10, 0.15) on a drawer
 # that works, then reused for every asset -- see the RULE comment in main().
 PLACE_X_FRAC  = 0.668   # along the opened tray's length
+PLACE_Y_MAX   = 0.05    # absolute cap on the lateral offset (m)
 PLACE_Y_FRAC  = -0.50   # of the half-width, toward the tray centre.
 # The official graph's -0.10 m sits ON the tray wall, which alone equals the
 # 0.1 m success radius -- it only works because the duck rolls inward on the
@@ -82,10 +83,18 @@ def detect_handle(mesh_baked, front_x, width_frac=0.85, eps=0.0008):
     """
     V = np.asarray(mesh_baked.vertices)
     full_y = float(np.ptp(V[:, 1]))
+    full_z = float(np.ptp(V[:, 2]))
+    # The door panel is the first slice back from the front that is wide AND
+    # tall. Width alone is not enough: drawer_ep0_v2_var4 mounts its handle bar
+    # on two brackets that together span 86 % of the tray width, so a width-only
+    # test mistook the handle band for the panel and then read the bar as a
+    # 0.3 mm "recessed pull". A panel also fills most of the tray's height,
+    # which a handle band never does.
     panel_x = None
     for x in np.arange(front_x, front_x - 0.06, -0.0005):
         sl = V[(V[:, 0] >= x - eps) & (V[:, 0] <= x + eps)]
-        if len(sl) > 3 and np.ptp(sl[:, 1]) > width_frac * full_y:
+        if (len(sl) > 3 and np.ptp(sl[:, 1]) > width_frac * full_y
+                and np.ptp(sl[:, 2]) > 0.50 * full_z):
             panel_x = float(x)
             break
     if panel_x is None:
@@ -126,7 +135,8 @@ def detect_handle(mesh_baked, front_x, width_frac=0.85, eps=0.0008):
     rear = None
     for x in np.arange(panel_x - 0.002, panel_x - 0.06, -0.0005):
         sl = V[(V[:, 0] >= x - eps) & (V[:, 0] <= x + eps)]
-        if len(sl) > 3 and np.ptp(sl[:, 1]) > width_frac * full_y:
+        if (len(sl) > 3 and np.ptp(sl[:, 1]) > width_frac * full_y
+                and np.ptp(sl[:, 2]) > 0.50 * full_z):
             rear = float(x)
             break
     if rear is None:
@@ -336,9 +346,14 @@ def main():
     tray_hi = jo + ihi
     open_lo = tray_lo + np.array([abs(pull), 0, 0])
     open_hi = tray_hi + np.array([abs(pull), 0, 0])
+    # The lateral offset must be capped in ABSOLUTE terms, not just scaled: the
+    # success check is a 0.1 m radius in XY, so a fraction of a wide tray eats
+    # the whole budget on its own. drawer_v2_variant's 312 mm tray put the duck
+    # 78 mm off-centre, leaving 63 mm for everything else, and it never passed.
+    _y = PLACE_Y_FRAC * (open_hi[1] - open_lo[1]) / 2.0
     inner_centre = np.array([
         open_lo[0] + PLACE_X_FRAC * (open_hi[0] - open_lo[0]),
-        PLACE_Y_FRAC * (open_hi[1] - open_lo[1]) / 2.0,
+        float(np.clip(_y, -PLACE_Y_MAX, PLACE_Y_MAX)),
         open_hi[2] + PLACE_Z_CLEAR,
     ])
 
