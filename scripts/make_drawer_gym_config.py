@@ -43,7 +43,7 @@ def _vec(s):
     return np.array([float(x) for x in s.split()]) if s else np.zeros(3)
 
 
-def handle_offset(urdf_path, init_q=0.0):
+def handle_offset(urdf_path, init_q=0.0, scale=(1.0, 1.0, 1.0)):
     """Grasp point in the outer_box frame: joint origin + handle origin, shifted
     by the slide joint's spawn position.
 
@@ -63,7 +63,13 @@ def handle_offset(urdf_path, init_q=0.0):
     sj = root.find("joint[@name='slide_rails']")
     if sj is not None and sj.find("axis") is not None:
         axis = _vec(sj.find("axis").get("xyz"))
-    return org("slide_rails") + org("fixed_handle") + axis * float(init_q)
+    local = org("slide_rails") + org("fixed_handle") + axis * float(init_q)
+    # body_scale is applied by the simulator to the whole articulation, so the
+    # handle does not sit where the URDF says unless it is folded in here. The
+    # official config squashes its drawer to 35 % height; inheriting that value
+    # while solving against unscaled coordinates put the grasp target 17-42 mm
+    # above the real handle on every asset generated from that template.
+    return local * np.asarray(scale, dtype=float)
 
 
 def find_entity(cfg, uid):
@@ -144,17 +150,22 @@ def main():
     gsrc = json.load(open(os.path.join(REPO, a.grasp_from))) if a.grasp_from else cfg
     tmpl = find_entity(gsrc, "drawer")
     tmpl_q = (tmpl.get("init_qpos") or [0.0])[0]
-    tmpl_local = handle_offset(resolve(tmpl["fpath"]), tmpl_q)
+    tmpl_scale = tmpl.get("body_scale") or (1.0, 1.0, 1.0)
+    tmpl_local = handle_offset(resolve(tmpl["fpath"]), tmpl_q, tmpl_scale)
     target = world_handle(tmpl["init_pos"], tmpl["init_rot"], tmpl_local)
     print(f"scene    {a.template}")
     print(f"grasp    {a.grasp_from or a.template}")
     print(f"template asset {tmpl['fpath']}")
-    print(f"  handle offset (outer_box frame) {np.round(tmpl_local, 4).tolist()}")
+    print(f"  body_scale {list(tmpl_scale)}")
+    print(f"  handle offset (outer_box frame, scaled) {np.round(tmpl_local, 4).tolist()}")
     print(f"  -> calibrated world grasp point {np.round(target, 4).tolist()}")
 
     # --- solve this asset's init_pos so its grasp point lands there ---
     new_q = (c.get("init_qpos") or [0.0])[0]
-    new_local = handle_offset(urdf, new_q)
+    # Assets from make_drawer_asset.py are already at their intended size, so
+    # they are placed unscaled rather than inheriting the template's squash.
+    new_scale = (1.0, 1.0, 1.0)
+    new_local = handle_offset(urdf, new_q, new_scale)
     scene_drawer = find_entity(cfg, "drawer")
     rot = scene_drawer["init_rot"]
     init = target - R.from_euler("xyz", np.deg2rad(rot)).as_matrix() @ new_local
@@ -171,6 +182,7 @@ def main():
     bg_z = round(init[2] + float(c["background_z_offset"]), 4)
     for e in cfg["articulation"]:
         e["fpath"] = rel
+        e["body_scale"] = list(new_scale)
         e["init_pos"] = init if e["uid"] == "drawer" else [init[0], init[1], bg_z]
         # Spawn closed. The closed pose is not always q=0: drawer_ep0's limit is
         # [-0.160, +0.085] and at q=0 its tray juts 105 mm past the cabinet

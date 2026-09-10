@@ -839,7 +839,7 @@
                 "func": "LeRobotRecorder",
                 "mode": "save",
                 "params": {
-                    "save_path": "lerobot_dataset/drawer_v2var",
+                    "save_path": "lerobot_dataset/drawer_v2_variant",
                     "robot_meta": {
                         "robot_type": "CobotMagic",
                         "control_freq": 25,
@@ -855,7 +855,7 @@
                     },
                     "extra": {
                         "scene_type": "Sim",
-                        "task_description": "drawer_v2var",
+                        "task_description": "drawer_v2_variant",
                         "data_type": "sim"
                     },
                     "use_videos": true
@@ -1290,7 +1290,7 @@
             "body_scale": [
                 1.0,
                 1.0,
-                0.35
+                1.0
             ],
             "init_rot": [
                 0.3,
@@ -1324,7 +1324,7 @@
             "body_scale": [
                 1.0,
                 1.0,
-                0.35
+                1.0
             ],
             "body_type": "kinematic",
             "init_rot": [
