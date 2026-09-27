@@ -671,6 +671,18 @@
                                 "uid": "duck"
                             },
                             "value": 0.02
+                        },
+                        {
+                            "name": "drawer_place_drop_xyz",
+                            "mode": "static",
+                            "entity_cfg": {
+                                "uid": "drawer"
+                            },
+                            "value": [
+                                0.18,
+                                0.0,
+                                0.14
+                            ]
                         }
                     ]
                 }
@@ -734,7 +746,8 @@
                                 "right_handle_pull_offset_xyz",
                                 "right_retreat_offset_xyz",
                                 "drawer_success_distance_threshold",
-                                "drawer_pull_distance"
+                                "drawer_pull_distance",
+                                "drawer_place_drop_xyz"
                             ],
                             "prefix": false
                         },

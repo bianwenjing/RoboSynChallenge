@@ -206,22 +206,26 @@ def main():
     for k in upd.keys() - seen:
         print(f"  !! '{k}' not present in template -- action graph will not see it")
 
-    # The drawer's randomisation range belongs to the same calibration as
-    # init_pos, not to the scene: the official range spans 150 mm in x and
-    # 180 mm in y, tuned around the official drawer's placement. Inheriting it
-    # with a different drawer pushed the handle out of the arm's workspace on
-    # most samples -- right_arm_handle_start_qpos failed IK outright.
+    # The drawer's randomisation RANGE stays with the scene template, not the
+    # grasp source. Reachability is a property of the arm, and the benchmark's
+    # own range ([-0.01,-0.18]..[0.05,0]) is proven reachable. This used to be
+    # copied from --grasp-from, narrowed to y +-0.10 m, because the benchmark's
+    # range produced IK failures -- but those failures came from the body_scale
+    # squash dropping the handle 17-42 mm, not from the range. At true scale,
+    # 25/25 executed episodes succeed under the wide range; the only cost is
+    # ~30 % of attempts rejected at IK before execution, which is cheap.
+    # Only the ORIENTATION fields follow the grasp source, since the grasp
+    # pipeline assumes the handle faces the robot.
     if a.grasp_from:
         gev = gsrc.get("env", {}).get("events", {}).get("random_drawer_pose")
         sev = cfg.get("env", {}).get("events", {}).get("random_drawer_pose")
         if gev and sev:
-            for k in ("position_range", "rotation_range", "relative_rotation"):
+            for k in ("rotation_range", "relative_rotation"):
                 if k in gev.get("params", {}):
                     sev["params"][k] = gev["params"][k]
                     print(f"  -> random_drawer_pose.{k} <- {a.grasp_from}")
-                elif k in sev.get("params", {}):
-                    sev["params"].pop(k)
-                    print(f"  -> random_drawer_pose.{k} dropped (absent in grasp source)")
+            print(f"  -> random_drawer_pose.position_range kept from scene: "
+                  f"{sev['params'].get('position_range')}")
 
     # Without this the key never reaches env.affordance_datas.
     for grp in walk_attrs(cfg, "drawer"):

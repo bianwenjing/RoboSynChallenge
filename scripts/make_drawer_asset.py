@@ -45,7 +45,45 @@ PLACE_Y_FRAC  = -0.50   # of the half-width, toward the tray centre.
 # shaped tray breaks, so aim at mid-width instead. Verified neutral: the drawer
 # it was calibrated against still collects 6/6.
 PLACE_Z_CLEAR = 0.066   # above the tray rim
+
+# Where the duck is actually RELEASED. The action graph has two place nodes:
+# left_arm_place_hover_* (positioned by drawer_inner_offset_xyz) and
+# left_arm_place_drop_*, which is where the gripper opens -- and that one
+# carried the official drawer's literal (0.18, 0, 0.14) for every asset.
+# Against drawer_v2_variant's own tray that literal sat 25 mm from the front
+# lip (the duck is 50 mm across) and 17 mm above the rim, so the duck settled
+# in or toppled out on the pose randomisation: measured 10/14, every failure
+# on the table at z = -0.05, missing in both directions.
+# The release is anchored in the CLOSED frame, because that is what the success
+# check measures: ||duck_xy - outer_box_origin_xy|| <= 0.1 is evaluated after
+# the push-back. The official drop (0.18) with its 0.14 pull leaves the duck
+# +0.040 m in front of the cabinet origin once shut, so every drawer uses
+#     drop_x = |pull| + DROP_CLOSED_X
+# which reproduces the official 0.18 exactly and keeps the duck the same
+# distance from the origin no matter how far the tray travels.
+# An earlier attempt anchored it as a FRACTION of the opened tray (0.628, also
+# read off the official asset). That fixed v2var but cost var4, whose failures
+# are push-backs that stall with the drawer 30-50 mm open: the duck rides out
+# with the tray, so it lands at 0.10-0.13 m against a 0.1 m threshold, and
+# moving its release 11 mm further out tipped marginal episodes over (6/12 vs
+# 76 % before). Anchoring in the closed frame moves var4 4 mm *closer* instead.
+DROP_CLOSED_X = 0.040   # where the duck sits, in x, once the drawer is shut
+DROP_Z_CLEAR  = 0.074   # above the tray rim (the duck is dropped, not set down)
+# y is the tray's lateral centre: the official drop moves there from the
+# hover's near-wall approach before opening the gripper.
 HOOK_DEPTH    = 0.012  # how far below the top rim the grasp point sits (m)
+
+# How far the closed fingertips reach past the grasp point toward the door
+# panel -- a property of the CobotMagic gripper, not of any drawer. Measured on
+# the official asset while holding: the upper finger's joint origin sits 3 mm
+# in front of handle_xpos and its tip 5 mm beyond that origin, so the tip ends
+# ~2 mm behind the grasp point; the tip's 6 mm end face, tilted 17-30 deg by
+# the wrist, projects another ~2 mm. The official drawer has 16.5 mm between
+# bar and panel so this never mattered there. drawer_v2_variant has 2.1 mm:
+# with the grasp point 1 mm behind its bar the upper fingertip ran into the
+# panel, the close stalled at a 22 mm aperture, and the bar slipped out on
+# the first pull (0/5). 3 mm further out it opened 5/5.
+TIP_CLEARANCE = 0.004
 
 # World x at which the official SlidingBoxDrawer puts its handle. That pose is
 # known-reachable for the right arm, so a deeper or shallower drawer should be
@@ -116,14 +154,18 @@ def detect_handle(mesh_baked, front_x, width_frac=0.85, eps=0.0008):
         blo, bhi = bar.min(axis=0), bar.max(axis=0)
         gap = float(blo[0] - panel_x)          # hook depth between panel and bar
         clearance = min(0.002, max(gap, 0.0) / 2.0)
-        grasp = np.array([blo[0] - clearance,
+        # Behind the bar when the gap allows it (the official geometry), but
+        # never so deep that the fingertips reach the panel.
+        gx = max(blo[0] - clearance, panel_x + TIP_CLEARANCE)
+        grasp = np.array([gx,
                           (blo[1] + bhi[1]) / 2.0,
                           (blo[2] + bhi[2]) / 2.0])
         why = ("protruding bar: panel x=%.4f, bar x[%.4f,%.4f] out %.1f mm, gap %.1f mm, "
-               "%.0fx%.0f mm -> grasp %.1f mm behind tip"
+               "%.0fx%.0f mm -> grasp %.1f mm behind tip, %.1f mm off panel%s"
                % (panel_x, blo[0], bhi[0], 1000 * (bhi[0] - panel_x), 1000 * gap,
                   1000 * (bhi[1] - blo[1]), 1000 * (bhi[2] - blo[2]),
-                  1000 * (front_x - grasp[0])))
+                  1000 * (front_x - grasp[0]), 1000 * (gx - panel_x),
+                  " (panel clearance governs)" if gx > blo[0] - clearance + 1e-9 else ""))
         return grasp, (blo, bhi), panel_x, "bar|" + why, None
 
     # No material in front of the panel. The handle may still be there, RECESSED
@@ -198,7 +240,8 @@ def panel_boxes(panel_lo, panel_hi, pk):
     return [(c, z) for c, z in out if all(v > 0.0015 for v in z)]
 
 
-def decompose(mesh, out_path, threshold=0.05, max_hulls=32, clip_front=None):
+def decompose(mesh, out_path, threshold=0.05, max_hulls=32, clip_front=None,
+              split_front=None):
     """Convex-decompose a mesh and write it as a multi-`o` OBJ.
 
     Physics engines only take convex shapes. A drawer or a cabinet is a concave
@@ -214,29 +257,61 @@ def decompose(mesh, out_path, threshold=0.05, max_hulls=32, clip_front=None):
     where the mesh has geometry. This is also what the official SlidingBoxDrawer
     ships (`*ACD.obj`, 13 and 15 hulls).
 
+    `split_front`: decompose everything in front of this x plane (the handle)
+    as its own mesh. CoACD's concavity threshold is relative to the whole
+    input, and a 7 mm handle bar on a 200 mm tray is below it: bar, end caps
+    and brackets come back as ONE hull, 15.8 mm thick where the bar itself is
+    7.2 mm (22 mm on var4, 34 mm on v2var). The fingers then stop on that
+    hull and hover 4 mm clear of the visible bar on each side -- physically a
+    grasp, visually not one. Run on its own, the same threshold splits the
+    bar from its caps at the visible thickness, which is how the official
+    asset ships its handle (bar + two stems, own hulls).
+
     Returns the number of hulls written.
     """
     import coacd
     coacd.set_log_level("error")
+
+    def run(m, preprocess="auto"):
+        V, F = np.asarray(m.vertices), np.asarray(m.faces)
+        if len(F) < 4:
+            return []
+        return [(np.asarray(v), np.asarray(f)) for v, f in coacd.run_coacd(
+            coacd.Mesh(V, F), threshold=threshold, max_convex_hull=max_hulls,
+            preprocess_mode=preprocess)]
+
+    V, F = np.asarray(mesh.vertices), np.asarray(mesh.faces)
+    fx = V[F][:, :, 0]
     if clip_front is not None:
         # Everything from clip_front forward is built explicitly by
         # panel_boxes(); decomposing it too would refill the pocket.
-        V = np.asarray(mesh.vertices)
-        keep = np.asarray(mesh.faces)[(V[np.asarray(mesh.faces)][:, :, 0]
-                                       <= clip_front + 1e-4).all(axis=1)]
-        if len(keep) >= 4:
-            mesh = trimesh.Trimesh(vertices=V, faces=keep).process()
-    V, F = np.asarray(mesh.vertices), np.asarray(mesh.faces)
-    if len(F) < 4:
-        trimesh.Scene().export(out_path)
-        return 0
-    parts = coacd.run_coacd(coacd.Mesh(V, F), threshold=threshold,
-                            max_convex_hull=max_hulls, preprocess_mode="auto")
-    scene = trimesh.Scene()
-    for i, (v, f) in enumerate(parts):
-        scene.add_geometry(trimesh.Trimesh(np.asarray(v), np.asarray(f)),
-                           geom_name=f"hull_{i}")
-    scene.export(out_path)
+        keep = (fx <= clip_front + 1e-4).all(axis=1)
+        mesh = trimesh.Trimesh(V, F[keep]).process()
+    parts = [("tray", p) for p in run(mesh)]
+    if split_front is not None:
+        # The whole-mesh pass stays as it is for the tray (it is watertight, so
+        # CoACD takes it as-is and its hulls are tight). Its handle hulls -- the
+        # ones lying wholly in front of the panel -- are replaced by a pass over
+        # the handle faces alone. That piece is open where it met the panel, and
+        # CoACD's manifold preprocessing would inflate it by ~1 mm a side, so
+        # preprocessing is off: the bar and its caps are convex-ish already.
+        parts = [(t, p) for t, p in parts
+                 if (p[0][:, 0].min() + p[0][:, 0].max()) / 2 <= split_front]
+        hf = (fx > split_front + 1e-4).all(axis=1)
+        if hf.sum() >= 4:
+            parts += [("handle", p) for p in
+                      run(trimesh.Trimesh(V, F[hf]).process(), preprocess="off")]
+    # Written by hand: trimesh's OBJ loader merges same-material objects back
+    # into one geometry, so a round trip through it would re-hull the tray.
+    with open(out_path, "w") as fh:
+        base = 1
+        for i, (tag, (v, f)) in enumerate(parts):
+            fh.write(f"o {tag}_{i}\n")
+            for x, y, z in v:
+                fh.write(f"v {x:.6f} {y:.6f} {z:.6f}\n")
+            for a_, b_, c_ in f + base:
+                fh.write(f"f {a_} {b_} {c_}\n")
+            base += len(v)
     return len(parts)
 
 
@@ -357,6 +432,12 @@ def main():
         open_hi[2] + PLACE_Z_CLEAR,
     ])
 
+    place_drop = np.array([
+        abs(pull) + DROP_CLOSED_X,
+        (open_lo[1] + open_hi[1]) / 2.0,
+        open_hi[2] + DROP_Z_CLEAR,
+    ])
+
     print(f"  tray bbox (baked) {np.round(ilo,3)} ~ {np.round(ihi,3)}")
     print(f"  -> handle_xpos           {np.round(handle,4)}")
     _cap = " capped by PULL_MAX" if travel * PULL_FRACTION > PULL_MAX else ""
@@ -389,7 +470,7 @@ def main():
 
     rpy = "0 0 0"   # rotation is baked into the vertices
 
-    def body(link_name, mesh_file, inertial, baked_mesh, pk=None):
+    def body(link_name, mesh_file, inertial, baked_mesh, pk=None, split_x=None):
         """One link: the baked visual mesh plus its collision geometry.
 
         Normally that is a CoACD decomposition of the whole mesh. When the link
@@ -399,7 +480,8 @@ def main():
         vis = baked[mesh_file]
         acd = os.path.splitext(vis)[0].replace("_baked", "") + "_acd.obj"
         n = decompose(baked_mesh, os.path.join(a.out_dir, "meshes", acd),
-                      clip_front=(pk["rear"] if pk else None))
+                      clip_front=(pk["rear"] if pk else None),
+                      split_front=split_x)
         cols = [f'''    <collision><origin xyz="0 0 0" rpy="{rpy}"/>
       <geometry><mesh filename="meshes/{acd}"/></geometry></collision>''']
         extra = 0
@@ -432,8 +514,11 @@ def main():
     # cabinet mouth stays open and the handle keeps its gap without either being
     # special-cased -- the mesh already says where the material is.
     outer_body, n_out = body("outer_box", outer_file, inertial_of(outer_n), baked_m[outer_file])
+    # A protruding bar is decomposed apart from the tray (see decompose());
+    # a recessed pull has no geometry in front of the panel to split off.
     inner_body, n_in = body("inner_box", inner_file, inertial_of(inner_n),
-                            baked_m[inner_file], pk=pocket)
+                            baked_m[inner_file], pk=pocket,
+                            split_x=(panel_x if kind == "bar" else None))
 
     # RULE: drawer_background is a second, kinematic copy stacked underneath to
     # look like a two-drawer cabinet. Its z must follow this asset's shell
@@ -483,6 +568,7 @@ def main():
     half = 0.075
     consts = {"drawer_pull_distance": round(float(pull), 4),
               "drawer_inner_offset_xyz": [round(float(v), 4) for v in inner_centre],
+              "drawer_place_drop_xyz": [round(float(v), 4) for v in place_drop],
               "init_pos_x": round(float(suggested_x + half), 4),
               "position_range": [[-2 * half, -0.18, 0.0], [0.0, 0.0, 0.0]],
               "handle_local_z": round(float(handle[2]), 4),

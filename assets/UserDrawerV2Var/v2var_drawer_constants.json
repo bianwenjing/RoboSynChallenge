@@ -5,7 +5,12 @@
     -0.05,
     0.189
   ],
-  "init_pos_x": 0.7447,
+  "drawer_place_drop_xyz": [
+    0.14,
+    0.0,
+    0.197
+  ],
+  "init_pos_x": 0.7477,
   "position_range": [
     [
       -0.15,
@@ -23,7 +28,7 @@
     0.0301,
     0.123
   ],
-  "_handle_reach": 0.0967,
+  "_handle_reach": 0.0997,
   "background_z_offset": -0.135,
   "shell_height": 0.13,
   "physics": {

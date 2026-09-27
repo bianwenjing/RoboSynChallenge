@@ -894,7 +894,7 @@
             "fpath": "assets/UserDrawerAuto/user_drawer.urdf",
             "uid": "drawer",
             "init_pos": [
-                0.7821,
+                0.7845,
                 0.0,
                 0.9
             ],
@@ -925,7 +925,7 @@
             "fpath": "assets/UserDrawerAuto/user_drawer.urdf",
             "uid": "drawer_background",
             "init_pos": [
-                0.7821,
+                0.7845,
                 0.0,
                 0.805
             ],

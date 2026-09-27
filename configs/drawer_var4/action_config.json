@@ -550,7 +550,7 @@
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
-                                                    "offset_value": 0.18,
+                                                    "offset_value": "env.affordance_datas['drawer_place_drop_xyz'][0]",
                                                     "direction": "x",
                                                     "mode": "intrinsic"
                                                 }
@@ -558,7 +558,7 @@
                                             {
                                                 "name": "get_offset_pose",
                                                 "kwargs": {
-                                                    "offset_value": 0.14,
+                                                    "offset_value": "env.affordance_datas['drawer_place_drop_xyz'][2]",
                                                     "direction": "z",
                                                     "mode": "intrinsic"
                                                 }

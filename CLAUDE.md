@@ -322,6 +322,71 @@ the same sweep found 9).
   are gone. Our drawer: 8 hulls per link, `|q|` max 0.1358 vs 0.1344 for the
   box shell it replaced.
 
+- **Decompose the handle apart from the tray, or the fingers never visually
+  touch it.** CoACD's concavity threshold is relative to the whole input, and a
+  7 mm handle bar on a 200 mm tray is below it: bar, end caps and brackets came
+  back as one hull -- 15.8 mm thick on ep0_v2, 22 mm on var4, 34 mm on v2var,
+  where the bar itself is 7-9 mm. The gripper stopped on that hull (aperture
+  14.2 mm, `grip_q` 0.0071) so the physics was a grasp, but in every wrist
+  frame the pads hovered ~4 mm clear of the bar on both sides. `decompose()`
+  now replaces the whole-mesh hulls lying in front of `panel_x` with a CoACD
+  pass over the handle faces alone, with `preprocess_mode="off"` (the cut
+  piece is open at its base and manifold preprocessing inflates it ~1 mm a
+  side). Result: bar hulls 7.5 / 7.0 / 7.1 / 8.9 mm = visible thickness,
+  aperture 10 mm, pads on the bar. The official asset ships its handle the
+  same way (bar + two stems as separate hulls). Recessed pulls are untouched.
+  Do not round-trip the OBJ through `trimesh.load`: it merges same-material
+  `o` groups back into one geometry and re-hulls the tray; the file is
+  written by hand.
+
+- **Keep the grasp point 4 mm off the door panel (`TIP_CLEARANCE`).** The
+  benchmark rule "2 mm behind the bar" assumes room for the fingertips behind
+  the bar (16.5 mm on the official drawer). The closed CobotMagic fingertip
+  reaches ~2 mm past the grasp point toward the panel, plus ~2 mm from its
+  tilted 6 mm tip face. drawer_v2_variant has a 2.1 mm gap: with the grasp
+  point 1 mm behind its bar the upper fingertip ran into the panel, the close
+  stalled at a 22 mm aperture and the bar slipped out on the pull -- 0/5 once
+  the hulls were true-thickness (the old 34 mm hull had masked it as 14 %).
+  `detect_handle` now takes `max(bar_rear - min(2 mm, gap/2), panel_x +
+  TIP_CLEARANCE)`; official `handle_xpos` still reproduces to 0.00 mm, the four
+  procedural grasp points moved 2.4-3.0 mm out, and v2_variant opens 5/5.
+  Moving a grasp point changes `handle_reach`, and `user_drawer_gym_config.json`
+  is the grasp-from source for every config, so its `init_pos` was compensated
+  (+2.4 mm) to keep the calibrated world grasp point at (0.6551, 0, 0.933).
+
+- **The duck is released by a SECOND place node, which also carried a literal.**
+  The action graph has `left_arm_place_hover_*` (positioned by the derived
+  `drawer_inner_offset_xyz`) and `left_arm_place_drop_*` -- and `sync` opens the
+  gripper after the *drop* edge, so the hover offset never decided where the
+  duck lands. The drop carried the official drawer's `x=0.18, z=0.14` for every
+  asset. Against drawer_v2_variant's own tray that sat 25 mm from the front lip
+  (the duck is 50 mm across) and 17 mm above the rim, so the duck settled in or
+  toppled out on the pose randomisation: 10/14, every failure on the table at
+  z = -0.05, missing in *both* directions. Now
+      drop_x = |pull| + DROP_CLOSED_X   (0.040 m)
+      drop_y = tray lateral centre
+      drop_z = tray rim + DROP_Z_CLEAR  (0.074 m)
+  anchored in the CLOSED frame because that is what the success check measures
+  (`||duck_xy - outer_box_xy|| <= 0.1`, evaluated after the push-back), so the
+  duck sits 40 mm from the origin however far the tray travels. Reproduces the
+  official (0.18, 0, 0.14) to 0.5 mm. v2_variant 55 % -> 96 % (23/24), var4
+  76 % -> 83 %; the others are unchanged within n=20 noise.
+  A first attempt anchored it as a FRACTION of the opened tray (0.628, also read
+  off the official asset). It fixed v2var but cost var4 (6/12): var4's failures
+  are not placement at all, and the fraction rule moved its release 11 mm
+  further out. Anchor in the closed frame, not the open one.
+
+- **var4's residual 17 % is an over-travel/rebound at the hard stop, and the
+  pull distance does not fix it.** Tracing the push edge: it completes with 31
+  of its 50 steps to spare, so it is not "the push stalls". Instead `q_peak` is
+  bimodal -- either ~0.130 or exactly 0.1697, its travel limit -- and after
+  hitting the stop the drawer rebounds (q reaches 0.000 mid-push and ends at
+  0.018). Measured against PULL_FRACTION: 0.80 -> 20/24, 0.70 -> 16/20 (still
+  3/20 into the stop, travelling 51 mm past a 0.119 m command), 0.60 -> 3/20
+  (a short pull leaves the duck outside the success radius once closed).
+  **Keep 0.80.** Chasing the over-travel means joint damping / gripper drag /
+  limit restitution; not attempted.
+
 **Two bugs a second drawer exposed** (`drawer_ep0`, limit `[-0.160, +0.085]`):
 
 - **`travel` was `|hi - lo|`.** That is the limit *span*, not the distance from

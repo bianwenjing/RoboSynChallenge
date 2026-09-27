@@ -35,7 +35,7 @@
   </joint>
 
   <joint name="fixed_handle" type="fixed">
-    <origin xyz="0.096750 0.000000 0.064100" rpy="0 -1.5707963268 0"/>
+    <origin xyz="0.099710 0.000000 0.064100" rpy="0 -1.5707963268 0"/>
     <parent link="inner_box"/><child link="handle_xpos"/>
   </joint>
 </robot>

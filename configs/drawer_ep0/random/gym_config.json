@@ -376,8 +376,8 @@
                     ],
                     "position_range": [
                         [
-                            0.0,
-                            -0.1,
+                            -0.01,
+                            -0.18,
                             0.0
                         ],
                         [
@@ -684,6 +684,18 @@
                                 "uid": "duck"
                             },
                             "value": 0.02
+                        },
+                        {
+                            "name": "drawer_place_drop_xyz",
+                            "mode": "static",
+                            "entity_cfg": {
+                                "uid": "drawer"
+                            },
+                            "value": [
+                                0.19,
+                                0.0,
+                                0.1605
+                            ]
                         }
                     ]
                 }
@@ -747,7 +759,8 @@
                                 "right_handle_pull_offset_xyz",
                                 "right_retreat_offset_xyz",
                                 "drawer_success_distance_threshold",
-                                "drawer_pull_distance"
+                                "drawer_pull_distance",
+                                "drawer_place_drop_xyz"
                             ],
                             "prefix": false
                         },
@@ -1283,7 +1296,7 @@
             "fpath": "assets/UserDrawerEp0/ep0_drawer.urdf",
             "uid": "drawer",
             "init_pos": [
-                0.7821,
+                0.7851,
                 0.0,
                 0.9
             ],
@@ -1317,7 +1330,7 @@
             "fpath": "assets/UserDrawerEp0/ep0_drawer.urdf",
             "uid": "drawer_background",
             "init_pos": [
-                0.7821,
+                0.7851,
                 0.0,
                 0.805
             ],
