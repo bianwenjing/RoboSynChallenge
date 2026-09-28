@@ -871,7 +871,8 @@
                         "task_description": "drawer_ep0_v2",
                         "data_type": "sim"
                     },
-                    "use_videos": true
+                    "use_videos": true,
+                    "image_writer_threads": 8
                 }
             }
         },
